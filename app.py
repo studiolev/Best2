@@ -1,7 +1,5 @@
 import streamlit as st
-import requests
 from PIL import Image
-import io
 import os
 from model import FurnitureDetector
 
@@ -16,9 +14,6 @@ st.set_page_config(
 def get_detector():
     return FurnitureDetector()
 
-# Get the backend URL from environment variable or use a default production URL
-BACKEND_URL = os.getenv("BACKEND_URL", "https://furniture-detector-backend.vercel.app")
-
 st.title("LEVisions - Furniture Detection & Recommendation")
 
 # Sidebar
@@ -27,17 +22,6 @@ confidence_threshold = st.sidebar.slider("Confidence Threshold", 0.0, 1.0, 0.5, 
 
 # Demo mode toggle
 demo_mode = st.sidebar.checkbox("Demo Mode", value=True)
-
-# Backend status
-st.sidebar.markdown("### Backend Status")
-try:
-    response = requests.get(f"{BACKEND_URL}/health")
-    if response.status_code == 200:
-        st.sidebar.success("Backend Connected")
-    else:
-        st.sidebar.error("Backend Error")
-except:
-    st.sidebar.error("Backend Offline")
 
 # Main content
 st.write("""
@@ -123,4 +107,3 @@ if uploaded_file is not None:
 # Footer
 st.markdown("---")
 st.markdown("Made with ❤️ by LEVisions")
-st.markdown("[GitHub Repository](https://github.com/your-repo-url)")
