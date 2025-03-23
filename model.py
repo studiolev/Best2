@@ -3,139 +3,20 @@ import tensorflow_hub as hub
 import numpy as np
 from PIL import Image
 import os
-import logging
-
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class FurnitureDetector:
     def __init__(self):
-        try:
-            # Load the model from TensorFlow Hub with error handling
-            logger.info("Loading model from TensorFlow Hub...")
-            self.model = hub.load('https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1')
-            logger.info("Model loaded successfully")
-            
-            self.furniture_classes = [
-                # Cadeiras
-                'Chair', 'Armchair', 'Office chair', 'Dining chair', 'Stool', 'Bench',
-                # Mesas
-                'Table', 'Coffee table', 'Dining table', 'Desk', 'Side table', 'Console table',
-                # Sofás
-                'Sofa', 'Couch', 'Loveseat', 'Ottoman',
-                # Camas
-                'Bed', 'Bed frame', 'Mattress',
-                # Armários
-                'Cabinet', 'Wardrobe', 'Closet', 'Cupboard', 'Sideboard', 'Buffet',
-                # Iluminação
-                'Lamp', 'Ceiling light', 'Chandelier', 'Wall lamp',
-                # Espelhos
-                'Mirror', 'Wall mirror',
-                # Prateleiras
-                'Shelf', 'Bookshelf', 'Wall shelf',
-                # Outros
-                'Rug', 'Curtain', 'Pillow', 'Blanket', 'Cushion'
-            ]
-            
-            # Dicionário de lojas de móveis em Portugal
-            self.furniture_stores = {
-                'Chair': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/cadeiras-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/cadeiras'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/cadeiras'},
-                    {'name': 'IKEA Portugal', 'url': 'https://www.ikea.com/pt/pt/cat/cadeiras-20661/'}
-                ],
-                'Table': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/mesas-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/mesas'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/mesas'},
-                    {'name': 'IKEA Portugal', 'url': 'https://www.ikea.com/pt/pt/cat/mesas-20662/'}
-                ],
-                'Sofa': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/sofas-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/sofas'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/sofas'},
-                    {'name': 'IKEA Portugal', 'url': 'https://www.ikea.com/pt/pt/cat/sofas-20663/'}
-                ],
-                'Bed': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/camas-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/camas'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/camas'},
-                    {'name': 'IKEA Portugal', 'url': 'https://www.ikea.com/pt/pt/cat/camas-20664/'}
-                ],
-                'Cabinet': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/armarios-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/armarios'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/armarios'},
-                    {'name': 'IKEA Portugal', 'url': 'https://www.ikea.com/pt/pt/cat/armarios-20665/'}
-                ],
-                'Lamp': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/iluminacao-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/iluminacao'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/iluminacao'},
-                    {'name': 'IKEA Portugal', 'url': 'https://www.ikea.com/pt/pt/cat/iluminacao-20666/'}
-                ],
-                'Mirror': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/espelhos-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/espelhos'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/espelhos'},
-                    {'name': 'IKEA Portugal', 'url': 'https://www.ikea.com/pt/pt/cat/espelhos-20667/'}
-                ],
-                'Shelf': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/prateleiras-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/prateleiras'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/prateleiras'},
-                    {'name': 'IKEA Portugal', 'url': 'https://www.ikea.com/pt/pt/cat/prateleiras-20668/'}
-                ],
-                'Rug': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/tapetes-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/tapetes'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/tapetes'}
-                ],
-                'Curtain': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/cortinas-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/cortinas'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/cortinas'}
-                ],
-                'Pillow': [
-                    {'name': 'Zara Home', 'url': 'https://www.zarahome.com/pt/almofadas-c1000000000000000000.html'},
-                    {'name': 'QuartoSala', 'url': 'https://www.quartosala.com/pt/almofadas'},
-                    {'name': 'Area Store', 'url': 'https://areastore.com/almofadas'}
-                ]
-            }
-            
-        except Exception as e:
-            logger.error(f"Error initializing FurnitureDetector: {str(e)}")
-            raise
-        
-    def get_similar_products(self, furniture_class):
-        """Retorna links para produtos similares em lojas portuguesas"""
-        try:
-            # Encontra a classe base mais próxima
-            base_class = None
-            for base in self.furniture_stores.keys():
-                if base.lower() in furniture_class.lower():
-                    base_class = base
-                    break
-            
-            if base_class and base_class in self.furniture_stores:
-                return self.furniture_stores[base_class]
-            return []
-        except Exception as e:
-            logger.error(f"Error in get_similar_products: {str(e)}")
-            return []
+        # Load the model from TensorFlow Hub
+        self.model = hub.load('https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1')
+        self.furniture_classes = [
+            'Chair', 'Table', 'Sofa', 'Bed', 'Cabinet', 'Desk', 'Lamp', 'Mirror',
+            'Shelf', 'Cupboard', 'Bench', 'Stool', 'Ottoman', 'Sideboard', 'Wardrobe'
+        ]
         
     def detect_furniture(self, image, confidence_threshold=0.5):
         try:
             # Convert PIL Image to numpy array
             img_array = np.array(image)
-            
-            # Ensure image is in RGB format
-            if len(img_array.shape) == 2:  # Grayscale
-                img_array = np.stack((img_array,) * 3, axis=-1)
-            elif img_array.shape[2] == 4:  # RGBA
-                img_array = img_array[:, :, :3]
             
             # Preprocess image
             input_img = tf.convert_to_tensor(img_array)[tf.newaxis, ...]
@@ -186,7 +67,7 @@ class FurnitureDetector:
             }
             
         except Exception as e:
-            logger.error(f"Error in detect_furniture: {str(e)}")
+            print(f"Error in detection: {str(e)}")
             return {
                 'detections': [],
                 'image': image
