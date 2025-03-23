@@ -90,8 +90,15 @@ if uploaded_file is not None:
                             st.write(f"Location: {item['bbox']}")
                             
                             if st.button(f"Find similar {item['class']} items", key=f"find_{item['class']}"):
-                                st.write("Searching for similar items...")
-                                # Add recommendation functionality here
+                                # Get similar products from stores
+                                similar_products = detector.get_similar_products(item['class'])
+                                
+                                if similar_products:
+                                    st.write("### Similar Products in Portuguese Stores:")
+                                    for store in similar_products:
+                                        st.markdown(f"- [{store['name']}]({store['url']})")
+                                else:
+                                    st.info("No similar products found in our database.")
                     
                     # Display processed image
                     if "image" in results:
